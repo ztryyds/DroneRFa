@@ -1,3 +1,5 @@
+# 数据预处理，将mat文件数据切片并进行STFT处理，结果存储在h5文件中
+import glob
 import os
 import h5py
 from scipy.signal import stft
@@ -5,10 +7,12 @@ import numpy as np
 
 dataset_base_dir = '../dataset'
 output_base_dir = '../output'
-mat_files_paths = [
-    'T11000_S1010.mat'
-]
-
+# mat_files_paths = [
+#     'T11000_S1010.mat',
+#     'T10011_S0110.mat'
+# ]
+mat_files_paths = '../dataset/*.mat'
+mat_files_paths = glob.glob(mat_files_paths)
 # STFT parameters
 modu_snr_size = 30000  # Samples per slice
 window_size = 256  # Window length
@@ -17,9 +21,8 @@ overlap_ratio = 0.5  # Overlap ratio
 window = 'hamming'  # Window type
 
 # Process .mat files and compute STFT
-for file_index, mat_file_path in enumerate(mat_files_paths):
+for file_index,mat_file_path in enumerate(mat_files_paths):
     print(f"Processing file {file_index + 1}/{len(mat_files_paths)}: {os.path.basename(mat_file_path)}")
-    full_mat_path = os.path.join(dataset_base_dir, mat_file_path)
     mat_basename = os.path.splitext(os.path.basename(mat_file_path))[0]
     label = mat_basename.split('_')[0]  # Extract label from filename
 
@@ -29,7 +32,7 @@ for file_index, mat_file_path in enumerate(mat_files_paths):
     os.makedirs(stft_output_folder, exist_ok=True)
 
     # Read .mat file
-    with h5py.File(full_mat_path, 'r') as data:
+    with h5py.File(mat_file_path, 'r') as data:
         try:
             # Channel 0 data
             RF0_I = data['RF0_I'][0]
