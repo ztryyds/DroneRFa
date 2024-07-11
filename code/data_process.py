@@ -3,8 +3,8 @@ import h5py
 from scipy.signal import stft
 import numpy as np
 
-dataset_base_dir = 'E://science/DroneRFa/dataset'
-output_base_dir = 'E://science/DroneRFa/output'
+dataset_base_dir = '../dataset'
+output_base_dir = '../output'
 mat_files_paths = [
     'T11000_S1010.mat'
 ]
