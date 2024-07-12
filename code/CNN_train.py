@@ -49,7 +49,7 @@ csv_logger = CSVLogger('../log/cnn_log.csv', append=False)
 history = model.fit(
     data_train, label_train_encoded,
     validation_data=(data_test, label_test_encoded),
-    epochs=5,
+    epochs=100,
     batch_size=32,
     callbacks=[
         ModelCheckpoint('../model/best_cnn_model.h5', save_best_only=True, verbose=1),
