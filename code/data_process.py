@@ -5,13 +5,8 @@ import h5py
 from scipy.signal import stft
 import numpy as np
 
-dataset_base_dir = '../dataset'
 output_base_dir = '../output'
-# mat_files_paths = [
-#     'T11000_S1010.mat',
-#     'T10011_S0110.mat'
-# ]
-mat_files_paths = '../dataset/*.mat'
+mat_files_paths = '../../dataset/*.mat'
 mat_files_paths = glob.glob(mat_files_paths)
 # STFT parameters
 modu_snr_size = 30000  # Samples per slice
@@ -73,6 +68,6 @@ for file_index,mat_file_path in enumerate(mat_files_paths):
         with h5py.File(stft_output_filename, 'w') as stft_fw:
             stft_fw.create_dataset('STFT Magnitude', data=Zxx_combined.astype(np.float32))
             stft_fw.attrs['label'] = label  # Save label as attribute
-        print(f'Saved STFT of slice {slice_idx} to {stft_output_filename}')
+        # print(f'Saved STFT of slice {slice_idx} to {stft_output_filename}')
 
 print("All files processed and STFT slices saved under respective 'stft' folders.")
