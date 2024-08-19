@@ -82,7 +82,7 @@ history = model.fit(
     epochs=100,
     batch_size=128,
     callbacks=[
-        ModelCheckpoint('../model/best_siamese_model.h5', save_best_only=True,
+        ModelCheckpoint('../model/best_cvnn_siamese_model.h5', save_best_only=True,
                         verbose=1, save_weights_only=True, monitor='val_accuracy'),
         EarlyStopping(monitor='val_accuracy', patience=10, verbose=1),
         csv_logger
