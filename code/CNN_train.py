@@ -2,14 +2,13 @@ import glob
 import numpy as np
 import h5py
 from sklearn.model_selection import train_test_split
-from myCNN import build_cnn_model
+from CNN_model import build_cnn_model
 from sklearn.preprocessing import LabelEncoder
-from keras.callbacks import CSVLogger, ModelCheckpoint, EarlyStopping
+from tensorflow.keras.callbacks import CSVLogger, ModelCheckpoint, EarlyStopping
 import matplotlib.pyplot as plt
 import os
 import tensorflow as tf
 
-os.environ['XLA_FLAGS'] = '--xla_gpu_cuda_data_dir=/home/gaoning/cuda11.8'
 
 # GPU configuration
 gpus = tf.config.experimental.list_physical_devices('GPU')
@@ -67,8 +66,9 @@ history = model.fit(
     epochs=100,
     batch_size=32,
     callbacks=[
-        ModelCheckpoint('../model/best_cnn_model.h5', save_best_only=True, verbose=1),
-        EarlyStopping(monitor='val_loss', patience=10, verbose=1),
+        ModelCheckpoint('../model/best_cnn_model.h5', save_best_only=True,
+                        verbose=1,save_weights_only=True,monitor='val_accuracy'),
+        EarlyStopping(monitor='val_accuracy', patience=10, verbose=1),
         csv_logger
     ],
     verbose=1

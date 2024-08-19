@@ -1,6 +1,6 @@
-from keras.models import Model
-from keras.optimizers import Adam
-from keras.layers import Input, Conv2D, Dropout, Flatten, Dense, MaxPooling2D
+from tensorflow.keras.models import Model
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.layers import Input, Conv2D, Dropout, Flatten, Dense, MaxPooling2D
 
 
 def build_cnn_model(input_shape, num_classes):
