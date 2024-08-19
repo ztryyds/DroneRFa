@@ -5,46 +5,71 @@ import h5py
 from scipy.signal import stft
 import numpy as np
 
-output_base_dir = '../output'
+train_base_dir = '../train'
+test_base_dir = '../test'
 mat_files_paths = '../../dataset/*.mat'
 mat_files_paths = glob.glob(mat_files_paths)
 # STFT parameters
 modu_snr_size = 30000  # Samples per slice
 window_size = 256  # Window length
-max_slices = 1200  # Maximum number of slices
+train_slices = 200  # Maximum number of train and val slices
+test_slices = 50  # Maximum number of test slices
 overlap_ratio = 0.5  # Overlap ratio
 window = 'hamming'  # Window type
 
 # Process .mat files and compute STFT
-for file_index,mat_file_path in enumerate(mat_files_paths):
-    print(f"Processing file {file_index + 1}/{len(mat_files_paths)}: {os.path.basename(mat_file_path)}")
-    mat_basename = os.path.splitext(os.path.basename(mat_file_path))[0]
-    label = mat_basename.split('_')[0]  # Extract label from filename
-
-    # Create output directories
-    output_folder = os.path.join(output_base_dir, mat_basename)
-    stft_output_folder = os.path.join(output_folder, 'stft')
-    os.makedirs(stft_output_folder, exist_ok=True)
-
+for file_index, mat_file_path in enumerate(mat_files_paths):
     # Read .mat file
-    with h5py.File(mat_file_path, 'r') as data:
-        try:
+    try:
+        with h5py.File(mat_file_path, 'r') as data:
+            print(f"Processing file {file_index + 1}/{len(mat_files_paths)}: {os.path.basename(mat_file_path)}")
+            mat_basename = os.path.splitext(os.path.basename(mat_file_path))[0]
+            label = mat_basename.split('_')[0]  # Extract label from filename
+
+            # Create output directories
+            train_folder = os.path.join(train_base_dir, mat_basename)
+            stft_train_folder = os.path.join(train_folder, 'stft')
+            os.makedirs(stft_train_folder, exist_ok=True)
+
+            test_folder = os.path.join(test_base_dir, mat_basename)
+            stft_test_folder = os.path.join(test_folder, 'stft')
+            os.makedirs(stft_test_folder, exist_ok=True)
+
             # Channel 0 data
-            RF0_I = data['RF0_I'][0]
-            RF0_Q = data['RF0_Q'][0]
-            data_ch0 = RF0_I + 1j * RF0_Q
+            if 'RF0_I' in data and 'RF0_Q' in data:
+                RF0_I = data['RF0_I'][0]
+                RF0_Q = data['RF0_Q'][0]
+                data_ch0 = RF0_I + 1j * RF0_Q
+            else:
+                print(f"Error: 'RF0_I' or 'RF0_Q' key not found in {os.path.basename(mat_file_path)}.")
+                continue  # Skip this file and proceed to the next one
 
             # Channel 1 data
-            RF1_I = data['RF1_I'][0]
-            RF1_Q = data['RF1_Q'][0]
-            data_ch1 = RF1_I + 1j * RF1_Q
-        except KeyError:
-            print(f"Error: Key not found in {os.path.basename(mat_file_path)}.")
+            if 'RF1_I' in data and 'RF1_Q' in data:
+                RF1_I = data['RF1_I'][0]
+                RF1_Q = data['RF1_Q'][0]
+                data_ch1 = RF1_I + 1j * RF1_Q
+            else:
+                print(f"Error: 'RF1_I' or 'RF1_Q' key not found in {os.path.basename(mat_file_path)}.")
+                continue  # Skip this file and proceed to the next one
+
+    except Exception as e:
+        print(f"Error processing file {os.path.basename(mat_file_path)}: {e}")
+        continue  # Skip this file and proceed to the next one
 
     total_samples = len(data_ch0)
-    num_slices = min(total_samples // modu_snr_size, max_slices)
+    num_slices = min(total_samples // modu_snr_size, train_slices + test_slices)
 
     for slice_idx in range(num_slices):
+        if slice_idx < train_slices:
+            stft_output_filename = os.path.join(stft_train_folder, f'slice_{slice_idx}_stft.h5')
+        else:
+            stft_output_filename = os.path.join(stft_test_folder, f'slice_{slice_idx}_stft.h5')
+        if os.path.exists(stft_output_filename):
+            print(f"文件存在: {stft_output_filename}")
+            continue
+        else:
+            print(f"文件不存在: {stft_output_filename}")
         start_idx = slice_idx * modu_snr_size
         end_idx = (slice_idx + 1) * modu_snr_size
         slice_data_ch0 = data_ch0[start_idx:end_idx]
@@ -52,9 +77,9 @@ for file_index,mat_file_path in enumerate(mat_files_paths):
 
         # Compute STFT
         _, _, Zxx_ch0 = stft(slice_data_ch0, nperseg=window_size, noverlap=int(window_size * overlap_ratio),
-                             window=window)
+                             window=window, return_onesided=False)
         _, _, Zxx_ch1 = stft(slice_data_ch1, nperseg=window_size, noverlap=int(window_size * overlap_ratio),
-                             window=window)
+                             window=window, return_onesided=False)
 
         Zxx_ch0_real = Zxx_ch0.real
         Zxx_ch0_imag = Zxx_ch0.imag
@@ -64,7 +89,6 @@ for file_index,mat_file_path in enumerate(mat_files_paths):
         Zxx_combined = np.stack([Zxx_ch0_real, Zxx_ch0_imag, Zxx_ch1_real, Zxx_ch1_imag], axis=-1)
 
         # Save STFT result
-        stft_output_filename = os.path.join(stft_output_folder, f'slice_{slice_idx}_stft.h5')
         with h5py.File(stft_output_filename, 'w') as stft_fw:
             stft_fw.create_dataset('STFT Magnitude', data=Zxx_combined.astype(np.float32))
             stft_fw.attrs['label'] = label  # Save label as attribute
