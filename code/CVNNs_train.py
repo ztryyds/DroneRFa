@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import tensorflow as tf
 from CVNNs_model import build_CVNNs_model
@@ -26,6 +27,10 @@ all_labels = []
 
 path_to_h5_files = '../train/*/stft/*.h5'
 for file_path in glob.glob(path_to_h5_files):
+    file_basename = os.path.splitext(os.path.basename(file_path))[0]
+    file_id = file_basename.split('_')[1]  # Extract label from filename
+    if int(file_id) >= 100:
+        continue
     with h5py.File(file_path, 'r') as file:
         all_slices.append(file['STFT Magnitude'][:])
         all_labels.append(file.attrs['label'])
@@ -33,17 +38,11 @@ for file_path in glob.glob(path_to_h5_files):
 all_slices = np.array(all_slices)
 all_labels = np.array(all_labels)
 
-# 将第一个复数转换出来
-complex_array_1 = all_slices[..., 0] + 1j * all_slices[..., 1]
+# 将 all_slices 视图转换为复数类型的数组
+all_slices = all_slices.view(np.complex64)
 
-# 将第二个复数转换出来
-complex_array_2 = all_slices[..., 2] + 1j * all_slices[..., 3]
-
-# 将两个复数数组沿最后一个维度堆叠
-complex_slices = np.stack((complex_array_1, complex_array_2), axis=-1)
-complex_slices = complex_slices.astype(np.complex64)
 # 分类别划分数据集
-data_train, data_val, label_train, label_val = train_test_split(complex_slices, all_labels, test_size=0.25,
+data_train, data_val, label_train, label_val = train_test_split(all_slices, all_labels, test_size=0.25,
                                                                 random_state=42, stratify=all_labels)
 
 # 确定唯一标签的数量
@@ -53,7 +52,7 @@ num_classes = len(unique_labels)
 # 标签编码
 encoder = LabelEncoder()
 label_train_encoded = encoder.fit_transform(label_train)
-label_test_encoded = encoder.transform(label_val)
+label_val_encoded = encoder.transform(label_val)
 
 # 保存LabelEncoder
 joblib.dump(encoder, '../model/label_encoder.joblib')
@@ -68,16 +67,16 @@ model = build_CVNNs_model(input_shape, num_classes)
 model.summary()
 
 # 配置 CSVLogger 回调
-csv_logger = CSVLogger('../log/cvnn2_log.csv', append=False)
+csv_logger = CSVLogger('../log/cvnn_log.csv', append=False)
 
 # 开始模型训练
 history = model.fit(
     data_train, label_train_encoded,
-    validation_data=(data_val, label_test_encoded),
+    validation_data=(data_val, label_val_encoded),
     epochs=100,
     batch_size=128,
     callbacks=[
-        ModelCheckpoint('../model/best_cvnn2_model.h5', save_best_only=True,
+        ModelCheckpoint('../model/best_cvnn_model.h5', save_best_only=True,
                         verbose=1, save_weights_only=True, monitor='val_accuracy'),
         EarlyStopping(monitor='val_accuracy', patience=10, verbose=1),
         csv_logger
@@ -97,5 +96,5 @@ plt.title('Training and Validation Loss')
 plt.xlabel('Epochs')
 plt.ylabel('Loss')
 plt.legend()
-plt.savefig('../img/cvnn2.png')  # 保存图像
+plt.savefig('../img/cvnn.png')  # 保存图像
 plt.close()
