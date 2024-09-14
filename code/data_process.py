@@ -5,15 +5,18 @@ import h5py
 from scipy.signal import stft
 import numpy as np
 
-train_base_dir = '../train'
-test_base_dir = '../test'
+# label_allow_list = ['T0000', 'T0001', 'T0010', 'T0011', 'T0100', 'T0101', 'T0110', 'T0111', 'T1000', 'T1001',
+#                     'T1010', 'T1011', 'T1100', 'T1101', 'T1110', 'T1111', 'T10000', 'T10001', 'T10010', 'T10011']
+s_allow_list = ['S0000','S1000']
+# train_base_dir = '../train_new'
+test_base_dir = '../openmax_test'
 mat_files_paths = '../../dataset/*.mat'
 mat_files_paths = glob.glob(mat_files_paths)
 # STFT parameters
 modu_snr_size = 30000  # Samples per slice
 window_size = 256  # Window length
-train_slices = 200  # Maximum number of train and val slices
-test_slices = 50  # Maximum number of test slices
+# train_slices = 1200  # Maximum number of train_new and val slices
+test_slices = 300  # Maximum number of test slices
 overlap_ratio = 0.5  # Overlap ratio
 window = 'hamming'  # Window type
 
@@ -25,11 +28,19 @@ for file_index, mat_file_path in enumerate(mat_files_paths):
             print(f"Processing file {file_index + 1}/{len(mat_files_paths)}: {os.path.basename(mat_file_path)}")
             mat_basename = os.path.splitext(os.path.basename(mat_file_path))[0]
             label = mat_basename.split('_')[0]  # Extract label from filename
+            s = mat_basename.split('_')[-1]
 
+            if label in label_allow_list:
+                print('label error',label)
+                continue
+            if s not in s_allow_list:
+                print('s error', s)
+                continue
+            print('success')
             # Create output directories
-            train_folder = os.path.join(train_base_dir, mat_basename)
-            stft_train_folder = os.path.join(train_folder, 'stft')
-            os.makedirs(stft_train_folder, exist_ok=True)
+            # train_folder = os.path.join(train_base_dir, mat_basename)
+            # stft_train_folder = os.path.join(train_folder, 'stft')
+            # os.makedirs(stft_train_folder, exist_ok=True)
 
             test_folder = os.path.join(test_base_dir, mat_basename)
             stft_test_folder = os.path.join(test_folder, 'stft')
@@ -58,18 +69,18 @@ for file_index, mat_file_path in enumerate(mat_files_paths):
         continue  # Skip this file and proceed to the next one
 
     total_samples = len(data_ch0)
-    num_slices = min(total_samples // modu_snr_size, train_slices + test_slices)
+    num_slices = min(total_samples // modu_snr_size, test_slices)
 
     for slice_idx in range(num_slices):
-        if slice_idx < train_slices:
-            stft_output_filename = os.path.join(stft_train_folder, f'slice_{slice_idx}_stft.h5')
-        else:
-            stft_output_filename = os.path.join(stft_test_folder, f'slice_{slice_idx}_stft.h5')
-        if os.path.exists(stft_output_filename):
-            print(f"文件存在: {stft_output_filename}")
-            continue
-        else:
-            print(f"文件不存在: {stft_output_filename}")
+        # if slice_idx < train_slices:
+        #     stft_output_filename = os.path.join(stft_train_folder, f'slice_{slice_idx}_stft.h5')
+        # else:
+        stft_output_filename = os.path.join(stft_test_folder, f'slice_{slice_idx}_stft.h5')
+        # if os.path.exists(stft_output_filename):
+        #     print(f"文件存在: {stft_output_filename}")
+        #     continue
+        # else:
+        #     print(f"文件不存在: {stft_output_filename}")
         start_idx = slice_idx * modu_snr_size
         end_idx = (slice_idx + 1) * modu_snr_size
         slice_data_ch0 = data_ch0[start_idx:end_idx]
