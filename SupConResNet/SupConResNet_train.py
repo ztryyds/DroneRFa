@@ -12,6 +12,7 @@ files5_list = ['T0011']
 files2_list = ['T0000', 'T0110', 'T1000','T1010', 'T1011', 'T1100', 'T1101',
                'T10000', 'T10010','T10100','T10101','T10110','T10111','T11000']
 
+label_allow_list = files6_list+files5_list+files2_list
 # GPU configuration
 gpus = tf.config.experimental.list_physical_devices('GPU')
 if gpus:
@@ -23,8 +24,8 @@ if gpus:
     except RuntimeError as e:
         print(e)
 
-path_to_train_files = '../train/*'
-path_to_val_files = '../val/*'
+path_to_train_files = '../data/stft/train/*'
+path_to_val_files = '../data/stft/val/*'
 encoder = joblib.load('../model/label_encoder.joblib')
 
 # 创建模型
@@ -58,22 +59,12 @@ def set_dataloader():
     for parent_path in glob.glob(path_to_train_files):
         parent_dir_name = os.path.basename(parent_path)
         label = parent_dir_name.split('_')[0]
-        if label in files6_list:
-            file_nums = 450
-        elif label in files5_list:
-            file_nums = 450
-        elif label in files2_list:
-            file_nums = 900
-        else:
-            print('label error',label)
+
+        if label not in label_allow_list:
             continue
 
-        h5_file_path = os.path.join(parent_path, 'stft/*.h5')
+        h5_file_path = os.path.join(parent_path, '*.h5')
         for file_path in glob.glob(h5_file_path):
-            file_basename = os.path.splitext(os.path.basename(file_path))[0]
-            file_id = file_basename.split('_')[1]  # Extract label from filename
-            if int(file_id) >= file_nums:
-                continue
             train_file_paths.append(file_path)
             train_labels.append(label)
 
@@ -82,22 +73,12 @@ def set_dataloader():
     for parent_path in glob.glob(path_to_val_files):
         parent_dir_name = os.path.basename(parent_path)
         label = parent_dir_name.split('_')[0]
-        if label in files6_list:
-            file_nums = 150
-        elif label in files5_list:
-            file_nums = 150
-        elif label in files2_list:
-            file_nums = 300
-        else:
-            print('label error',label)
+
+        if label not in label_allow_list:
             continue
 
-        h5_file_path = os.path.join(parent_path, 'stft/*.h5')
+        h5_file_path = os.path.join(parent_path, '*.h5')
         for file_path in glob.glob(h5_file_path):
-            file_basename = os.path.splitext(os.path.basename(file_path))[0]
-            file_id = file_basename.split('_')[1]  # Extract label from filename
-            if int(file_id) >= file_nums:
-                continue
             val_file_paths.append(file_path)
             val_labels.append(label)
 
@@ -108,13 +89,13 @@ def set_dataloader():
     train_pairs, train_labels = create_sample_pairs(train_file_paths, train_labels)
     val_pairs, val_labels = create_sample_pairs(val_file_paths, val_labels)
     # 创建训练和验证数据生成器，加载所有允许类别的数据
-    training_generator = DataGenerator_pair(train_pairs, train_labels)
+    train_generator = DataGenerator_pair(train_pairs, train_labels)
     val_generator = DataGenerator_pair(val_pairs, val_labels)
-    return training_generator,val_generator
+    return train_generator,val_generator
 
 
 if __name__ == '__main__':
-    training_generator,val_generator = set_dataloader()
+    train_generator,val_generator = set_dataloader()
     # 配置 CSVLogger 回调
     csv_logger = CSVLogger('../log/SupConResNet.csv', append=False)
 
@@ -124,7 +105,7 @@ if __name__ == '__main__':
 
     # 开始模型训练
     history = model.fit(
-        training_generator,
+        train_generator,
         validation_data = val_generator,
         epochs=100,
         callbacks=[

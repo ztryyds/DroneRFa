@@ -11,14 +11,18 @@ from DataLoader import DataGenerator
 # files5_list = ['T0011']
 # files2_list = ['T0000', 'T0110', 'T1000','T1010', 'T1011', 'T1100', 'T1101',
 #                'T10000', 'T10010','T10100','T10101','T10110','T10111','T11000']
-files6_list = ['T0001', 'T0010', 'T0100', 'T0101', 'T0111', 'T1001']
+
+# files6_list = ['T0001', 'T0010', 'T0100', 'T0101', 'T0111', 'T1001']
+# files5_list = ['T0011']
+# files2_list = ['T0000', 'T0110', 'T1000','T1010', 'T1011', 'T1100', 'T1101',
+#                'T10000', 'T10010','T1111', 'T1110', 'T10011', 'T10001']
+#
+# openmax2_list = ['T10100','T10101','T10110','T10111','T11000']
+files6_list = ['T0001', 'T0010', 'T0101', 'T0111', 'T1001']
 files5_list = ['T0011']
-
 files2_list = ['T0000', 'T0110', 'T1000','T1010', 'T1011', 'T1100', 'T1101',
-               'T10000', 'T10010','T1111', 'T1110', 'T10011', 'T10001']
-
-openmax2_list = ['T10100','T10101','T10110','T10111','T11000']
-
+               'T10000', 'T10010','T10100','T10101','T10110']
+openmax2_list = ['T10111','T11000']
 # GPU configuration
 gpus = tf.config.experimental.list_physical_devices('GPU')
 if gpus:
@@ -32,10 +36,10 @@ if gpus:
 
 path_to_train_files = '../train/*'
 path_to_val_files = '../val/*'
-encoder = joblib.load('../model/label_encoder1.joblib')
+encoder = joblib.load('../model/label_encoder2.joblib')
 
 # 创建模型
-num_classes = 20
+num_classes = 18
 input_shape = (256, 236, 2)
 
 # 生成训练数据
@@ -96,7 +100,7 @@ training_generator = DataGenerator(train_file_paths, train_labels)
 val_generator = DataGenerator(val_file_paths, val_labels)
 
 # 配置 CSVLogger 回调
-csv_logger = CSVLogger('../log/Classifier1.csv', append=False)
+csv_logger = CSVLogger('../log/Classifier2.csv', append=False)
 
 model = LinearClassifier(input_shape, num_classes)
 model.summary()
@@ -107,7 +111,7 @@ history = model.fit(
     validation_data = val_generator,
     epochs=100,
     callbacks=[
-        ModelCheckpoint('../model/best_Classifier_model1.h5', save_best_only=True,
+        ModelCheckpoint('../model/best_Classifier_model2.h5', save_best_only=True,
                         verbose=1, save_weights_only=True, monitor='val_accuracy'),
         EarlyStopping(monitor='val_accuracy', patience=10, verbose=1),
         csv_logger,

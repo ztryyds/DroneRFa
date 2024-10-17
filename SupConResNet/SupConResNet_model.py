@@ -4,7 +4,7 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.layers import Add
 from cvnn.activations import softmax_real_with_abs
 from tensorflow.keras.models import Model
-from SupConResNet.losses import SupConLoss
+from losses import SupConLoss
 
 
 def residual_block(x, num_channels, strides=(1, 1)):
@@ -40,8 +40,6 @@ def ResNet(input_shape):
     x = resnet_block(x, 256, strides=(2, 2))
     x = ComplexAvgPooling2D(pool_size=(2, 2), strides=(2, 2))(x)
 
-    # 再使用全局平均池化降低
-    # x = GlobalAveragePooling2D()(x)
     x = ComplexFlatten()(x)
     model = Model(inputs=inputs, outputs=x)
     return model
@@ -62,7 +60,6 @@ def SupConResNet(input_shape):
     feat = encoder(inputs)
     feat = head(feat)
     model = Model(inputs=inputs, outputs=feat)
-    #修改学习率0.001->0.0001
     adam = Adam(learning_rate=0.0001, beta_1=0.9, beta_2=0.999, epsilon=1e-07)
     model.compile(optimizer=adam,
                   loss=SupConLoss(),
@@ -77,7 +74,6 @@ def LinearClassifier(input_shape, num_classes):
     encoder.load_weights('../model/best_SupConResNet_model.h5')
 
     for layer in encoder.layers:
-        # if layer.name in ['input_1', 'model']:
         layer.trainable = False
 
     feature = encoder(inputs)

@@ -7,4 +7,4 @@
 #SBATCH -t 30:00:00 # 任务最大运行时间
 #SBATCH --gres=gpu:1  # gpu数量
 
-python ./SupConResNet_train.py
+python ./SupConResNet_time.py

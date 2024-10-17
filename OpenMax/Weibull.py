@@ -5,10 +5,9 @@ import libmr
 
 NCHANNELS = 1
 # 加载已保存的MAV和类别编码器
-mean_vector_path = '../data1/features'
-distance_save_path = '../data1/distances'
-tail_percent = 0.025
-
+mean_vector_path = '../data/MAV'
+distance_save_path = '../data/distances'
+tail_percent = 0.013
 
 def weibull_tailfitting(meanfiles_path, distancefiles_path, labellist, distance_type):
     weibull_model = {}

@@ -5,7 +5,7 @@ import joblib
 from scipy.io import savemat
 import numpy as np
 import tensorflow as tf
-from SupConResNet_model import LinearClassifier
+from SupConResNet.SupConResNet_model import LinearClassifier
 import scipy.spatial.distance as spd
 
 encoder = joblib.load('../model/label_encoder.joblib')
@@ -44,7 +44,7 @@ def compute_mean_vector(model, label_name):
         eucos_distances = []
         correct_features = np.array(correct_features)
         mean_vector = np.mean(correct_features, axis=0)
-        savemat(f'../data1/features/{label_name}_mav.mat', {label_name: mean_vector})
+        savemat(f'../data/MAV/{label_name}_mav.mat', {label_name: mean_vector})
         print(f"{label_name} has saved")
 
         # 计算完后直接生成距离
@@ -58,7 +58,7 @@ def compute_mean_vector(model, label_name):
             eucos_distances.append(eucos_distance)
 
         # 保存距离结果
-        savemat(f'../data1/distances/{label_name}_distances.mat',
+        savemat(f'../data/distances/{label_name}_distances.mat',
                 {'euclidean': euclidean_distances, 'cosine': cosine_distances, 'eucos': eucos_distances})
         print(f"Saved distances for {label_name}")
     else:
