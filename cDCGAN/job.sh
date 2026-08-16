@@ -7,9 +7,6 @@
 #SBATCH -t 48:00:00 # 任务最大运行时间
 #SBATCH --gres=gpu:1  # gpu数量
 
-#python -u cDCGAN_train.py
+python -u cDCGAN_train.py
 python -u generate1.py
 python -u generate2.py
-#python -u gen_test.py
-#python -u move.py
-#python -u gen_test_1.py
